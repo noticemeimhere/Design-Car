@@ -3,8 +3,8 @@
 
 MotorDriver motor;
 
-const int motorL{1};
-const int motorR{0};
+const int motorL{0};
+const int motorR{1};
 
 const int lineL{2};
 const int lineC{3};
@@ -20,26 +20,42 @@ const int echoPin{6};
 float distance{};
 float duration{};
 
+int lastTurned {0};
+
 const void goForward()
 {
+  motor.speed(motorL,0);
+  motor.speed(motorR,0);
   motor.speed(0,-75);
   motor.speed(1,-75);
 }
 
 const void goLeft()
 {
-  motor.stop(motorL);
+  motor.speed(motorL,0);
+  motor.speed(motorR,0);
+  motor.brake(motorL);
   motor.speed(motorR,-75);
+  motor.speed(motorL,75);
+  motor.stop(motorL);
 }
 
 const void goRight()
 {
+  motor.speed(motorL,0);
+  motor.speed(motorR,0);
+  motor.brake(motorR);
+  motor.speed(motorR,75);
   motor.speed(motorL,-75);
   motor.stop(motorR);
 }
 
-const void stop()
+const void stop1()
 {
+  motor.brake(motorR);
+  motor.brake(motorL);
+ motor.speed(motorL,0);
+ motor.speed(motorR,0);
  motor.stop(motorL);
  motor.stop(motorR);
 }
@@ -65,12 +81,17 @@ void loop()
   lineRn = digitalRead(lineR);
 
   digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
+  delay(0.002);
   digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
+  delay(.010);
   digitalWrite(trigPin, LOW);
   duration = pulseIn(echoPin, HIGH);
   distance = duration * 0.034 / 2;
+
+  if(distance > 300)
+  {
+    distance = 300;
+  }
   
   Serial.print("Distance: ");
   Serial.println(distance);
@@ -79,39 +100,46 @@ void loop()
   Serial.print("lineC: "); Serial.println(lineCn);
   Serial.print("lineR: "); Serial.println(lineRn);
 
-  if (distance < 10)
+  if (distance == 9.991)
   {
-    stop();
+    stop1();
     Serial.println("holy squid games batman!! theres an obstacle!!!!!!!");
-    goLeft();
-    delay(30);
-    goForward();
-    delay(50);
-    goRight();
-    delay(30);
-    goForward();
-    //change timings as needed to pass obstacle first try
+    while(true);
   }
-  
-  if (lineLn == 1 && lineCn == 0 && lineRn == 1)
+
+  if (lineLn == 0 && lineCn == 1 && lineRn == 0)
   {
     Serial.println("Going forward");
     goForward();
-  }
-  else if ((lineLn == 0 && lineCn == 1 && lineRn == 1) || (lineLn == 0 && lineCn == 0 && lineRn == 1))
-  {
-    Serial.println("Turning left");
-    goLeft();
+    lastTurned = 0;
   }
   else if ((lineLn == 1 && lineCn == 1 && lineRn == 0) || (lineLn == 1 && lineCn == 0 && lineRn == 0))
   {
     Serial.println("Turning right");
     goRight();
+    lastTurned = 1;
   }
-  else if (lineLn == 1 && lineCn == 1 && lineRn == 1)
+  else if ((lineLn == 0 && lineCn == 1 && lineRn == 1) || (lineLn == 0 && lineCn == 0 && lineRn == 1))
+  {
+    Serial.println("Turning left");
+    goLeft();
+    lastTurned = 2;
+  }
+  else if (lineLn == 0 && lineCn == 0 && lineRn == 0)
   {
     Serial.println("im like 90 percent sure we have finished the line"); //we will stop just incase because i dont want him to spin for no reason
-    stop();
+    if(lastTurned == 0)
+    {
+      stop1();
+    }
+    else if(lastTurned==1)
+    {
+      goLeft();
+    }
+    else if(lastTurned==2)
+    {
+      goRight();
+    }
   }
   else{
     Serial.println("what the hell im just going to spin until i find a valid config");
