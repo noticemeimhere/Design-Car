@@ -1,6 +1,8 @@
 #include <MotorDriver.h>
 #include <Arduino.h>
 
+#define PID_GAMING
+
 MotorDriver motor;
 
 const int motorL{0};
@@ -22,6 +24,18 @@ float duration{};
 
 int lastTurned {0};
 
+float Kp = 25.0;
+float Ki = 0.0;
+float Kd = 15.0;
+
+float error = 0;
+float previousError = 0;
+float integral = 0;
+float derivative = 0;
+
+int baseSpeed = 75; // base speed of motors
+
+#ifndef PID_GAMING
 const void goForward()
 {
   motor.speed(motorL,0);
@@ -49,16 +63,35 @@ const void goRight()
   motor.speed(motorL,-75);
   motor.stop(motorR);
 }
+#endif
 
 const void stop1()
 {
-  motor.brake(motorR);
-  motor.brake(motorL);
+ motor.brake(motorR);
+ motor.brake(motorL);
  motor.speed(motorL,0);
  motor.speed(motorR,0);
  motor.stop(motorL);
  motor.stop(motorR);
 }
+
+
+#ifdef PID_GAMING
+int getLineError() {
+  int left = digitalRead(lineL);
+  int center = digitalRead(lineC);
+  int right = digitalRead(lineR);
+
+  if (left == 1 && center == 0 && right == 0) return -2;
+  if (left == 1 && center == 1 && right == 0) return -1;
+  if (left == 0 && center == 1 && right == 0) return 0;
+  if (left == 0 && center == 1 && right == 1) return 1;
+  if (left == 0 && center == 0 && right == 1) return 2;
+  // Lost line
+  return 0;
+}
+#endif
+
 
 void setup()
 {
@@ -93,6 +126,7 @@ void loop()
     distance = 300;
   }
   
+  #ifdef PID_GAMING
   Serial.print("Distance: ");
   Serial.println(distance);
   
@@ -100,6 +134,26 @@ void loop()
   Serial.print("lineC: "); Serial.println(lineCn);
   Serial.print("lineR: "); Serial.println(lineRn);
 
+  
+  error = getLineError();
+  integral += error;
+  derivative = error - previousError;
+  previousError = error;
+
+  float correction = Kp * error + Ki * integral + Kd * derivative;
+
+  int leftSpeed = baseSpeed + correction;
+  int rightSpeed = baseSpeed - correction;
+
+  // Clamp speed values
+  leftSpeed = constrain(leftSpeed, -255, 255);
+  rightSpeed = constrain(rightSpeed, -255, 255);
+
+  motor.speed(motorL, -leftSpeed);  // negative since your current forward is -75
+  motor.speed(motorR, -rightSpeed);
+  #endif
+
+  #ifndef PID_GAMING
   if (distance == 9.991)
   {
     stop1();
@@ -130,20 +184,27 @@ void loop()
     Serial.println("im like 90 percent sure we have finished the line"); //we will stop just incase because i dont want him to spin for no reason
     if(lastTurned == 0)
     {
+      #ifndef PID_GAMING
       stop1();
+      #endif
     }
     else if(lastTurned==1)
     {
+      #ifndef PID_GAMING
       goLeft();
+      #endif
     }
     else if(lastTurned==2)
     {
+      #ifndef PID_GAMING
       goRight();
+      #endif
     }
   }
   else{
     Serial.println("what the hell im just going to spin until i find a valid config");
     goLeft();
   }
+  #endif
   //delay(20); //can be removed if we need to but this is just incase 
 }
