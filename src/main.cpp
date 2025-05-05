@@ -1,7 +1,9 @@
-#include <MotorDriver.h>
+//#include <MotorDriver.h>
 #include <Arduino.h>
+#include <Servo.h>
 
-MotorDriver motor;
+//MotorDriver motor;
+Servo myservo;
 
 const int motorL{1};
 const int motorR{0};
@@ -15,33 +17,33 @@ int lineCn{};
 int lineRn{};
 
 const int trigPin{5};
-const int echoPin{6};
+const int echoPin{7};
 
 float distance{};
 float duration{};
 
 const void goForward()
 {
-  motor.speed(0,-75);
-  motor.speed(1,-75);
+  //motor.speed(0,-75);
+  //motor.speed(1,-75);
 }
 
 const void goLeft()
 {
-  motor.stop(motorL);
-  motor.speed(motorR,-75);
+  //motor.stop(motorL);
+  //motor.speed(motorR,-75);
 }
 
 const void goRight()
 {
-  motor.speed(motorL,-75);
-  motor.stop(motorR);
+  //motor.speed(motorL,-75);
+  //motor.stop(motorR);
 }
 
 const void stop()
 {
-  motor.stop(motorL);
-  motor.stop(motorR);
+ // motor.stop(motorL);
+ // motor.stop(motorR);
 }
 
 void setup()
@@ -55,7 +57,11 @@ void setup()
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
 
-  motor.begin();
+ // motor.begin();
+
+  myservo.attach(6);
+
+  
 }
 
 void loop() 
@@ -63,6 +69,8 @@ void loop()
   lineLn = digitalRead(lineL);
   lineCn = digitalRead(lineC);
   lineRn = digitalRead(lineR);
+
+  myservo.write(0);
 
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
@@ -83,7 +91,13 @@ void loop()
   {
     stop();
     Serial.println("holy squid games batman!! theres an obstacle!!!!!!!");
-    while(true); //I HATE VOID LOOP THEREFORE I WILL CAST INFINITE WHILE LOOP!!!!!
+    //while(true); //I HATE VOID LOOP THEREFORE I WILL CAST INFINITE WHILE LOOP!!!!!
+    myservo.write(0);
+    delay(1000);
+    myservo.write(90);
+    delay(1000);
+    myservo.write(180);
+    delay(1000);
   }
   
   if (lineLn == 1 && lineCn == 0 && lineRn == 1)
@@ -110,6 +124,6 @@ void loop()
     Serial.println("what the hell im just going to spin until i find a valid config");
     goLeft();
   }
-
+  myservo.write(90);
   //delay(20); //can be removed if we need to but this is just incase 
 }
