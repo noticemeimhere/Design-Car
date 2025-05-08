@@ -19,21 +19,13 @@ int lineRn{};
 const int trigPin{5};
 const int echoPin{6};
 
+const int buzzer{7};
+
 float distance{};
 float duration{};
 
 int lastTurned {0};
 
-float Kp = 10.0;
-float Ki = 0.0;
-float Kd = 0.0;
-
-float error = 0;
-float previousError = 0;
-float integral = 0;
-float derivative = 0;
-
-int baseSpeed = 75; // base speed of motors
 
 #ifndef PID_GAMING
 const void goForward()
@@ -76,24 +68,6 @@ const void stop1()
 }
 
 
-#ifdef PID_GAMING
-int getLineError() 
-{
-  int left = digitalRead(lineL);
-  int center = digitalRead(lineC);
-  int right = digitalRead(lineR);
-
-  if (left == 1 && center == 0 && right == 0) return -2;
-  if (left == 1 && center == 1 && right == 0) return -1;
-  if (left == 0 && center == 1 && right == 0) return 0;
-  if (left == 0 && center == 1 && right == 1) return 1;
-  if (left == 0 && center == 0 && right == 1) return 2;
-  // Lost line
-  return 0;
-}
-#endif
-
-
 void setup()
 {
   Serial.begin(9600);
@@ -104,6 +78,8 @@ void setup()
 
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
+
+  pinMode(buzzer,OUTPUT);
 
   motor.begin();
 }
@@ -121,43 +97,39 @@ void loop()
   digitalWrite(trigPin, LOW);
   duration = pulseIn(echoPin, HIGH);
   distance = duration * 0.034 / 2;
+  Serial.println(distance);
+  tone(buzzer, (distance*10));
 
   if(distance > 300)
   {
     distance = 300;
   }
 
-  #ifdef PID_GAMING
-  Serial.print("Distance: ");
-  Serial.println(distance);
-  
-  Serial.print("lineL: "); Serial.println(lineLn);
-  Serial.print("lineC: "); Serial.println(lineCn);
-  Serial.print("lineR: "); Serial.println(lineRn);
-
-  
-  error = getLineError();
-  integral += error;
-  derivative = error - previousError;
-  previousError = error;
-
-  float correction = Kp * error + Ki * integral + Kd * derivative;
-
-  int leftSpeed = baseSpeed + correction;
-  int rightSpeed = baseSpeed - correction;
-
-  // Clamp speed values
-  leftSpeed = constrain(leftSpeed, -255, 255);
-  rightSpeed = constrain(rightSpeed, -255, 255);
-
-  motor.speed(motorL, -leftSpeed);  // negative since your current forward is -75
-  motor.speed(motorR, -rightSpeed);
-  #endif
-
   if (distance < 10)
   {
     stop1();
     Serial.println("holy squid games batman!! theres an obstacle!!!!!!!");
+    tone(buzzer, 1000);
+    delay(100);
+    noTone(buzzer);
+    delay(100);
+    tone(buzzer, 1000);
+    delay(100);
+    noTone(buzzer);
+    delay(100);
+    tone(buzzer, 1000);
+    delay(100);
+    noTone(buzzer);
+    delay(100);
+    tone(buzzer,3000);
+    delay(1000);
+    noTone(buzzer);
+    for(int i{}; i < 700; i ++)
+    {
+      tone(buzzer,i);
+      delay(10);
+    }
+    noTone(buzzer);
     while(true);
   }
   
@@ -174,7 +146,7 @@ void loop()
     goRight();
     lastTurned = 1;
   }
-  else if ((lineLn == 0 && lineCn == 1 && lineRn == 1) || (lineLn == 0 && lineCn == 0 && lineRn == 1))
+  else if ((lineLn == 0 && lineCn == 1 && lineRn == 1))
   {
     Serial.println("Turning left");
     goLeft();
