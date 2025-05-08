@@ -1,7 +1,7 @@
 #include <MotorDriver.h>
 #include <Arduino.h>
 
-#define PID_GAMING
+//#define PID_GAMING
 
 MotorDriver motor;
 
@@ -24,9 +24,9 @@ float duration{};
 
 int lastTurned {0};
 
-float Kp = 25.0;
+float Kp = 10.0;
 float Ki = 0.0;
-float Kd = 15.0;
+float Kd = 0.0;
 
 float error = 0;
 float previousError = 0;
@@ -77,7 +77,8 @@ const void stop1()
 
 
 #ifdef PID_GAMING
-int getLineError() {
+int getLineError() 
+{
   int left = digitalRead(lineL);
   int center = digitalRead(lineC);
   int right = digitalRead(lineR);
@@ -125,7 +126,7 @@ void loop()
   {
     distance = 300;
   }
-  
+
   #ifdef PID_GAMING
   Serial.print("Distance: ");
   Serial.println(distance);
@@ -153,19 +154,19 @@ void loop()
   motor.speed(motorR, -rightSpeed);
   #endif
 
-  #ifndef PID_GAMING
-  if (distance == 9.991)
+  if (distance < 10)
   {
     stop1();
     Serial.println("holy squid games batman!! theres an obstacle!!!!!!!");
     while(true);
   }
-
-  if (lineLn == 0 && lineCn == 1 && lineRn == 0)
+  
+  #ifndef PID_GAMING
+  if ((lineLn == 0 && lineCn == 1 && lineRn == 0) || (lineLn == 1 && lineCn == 1 && lineRn == 1))
   {
     Serial.println("Going forward");
     goForward();
-    lastTurned = 0;
+    lastTurned = 1;
   }
   else if ((lineLn == 1 && lineCn == 1 && lineRn == 0) || (lineLn == 1 && lineCn == 0 && lineRn == 0))
   {
