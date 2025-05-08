@@ -129,6 +129,12 @@ void loop()
       tone(buzzer,i);
       delay(10);
     }
+
+    for(int i{}; i > 1; i --)
+    {
+      tone(buzzer,i);
+      delay(10);
+    }
     noTone(buzzer);
     while(true);
   }
@@ -173,10 +179,6 @@ void loop()
       goRight();
       #endif
     }
-  }
-  else{
-    Serial.println("what the hell im just going to spin until i find a valid config");
-    goLeft();
   }
   #endif
   //delay(20); //can be removed if we need to but this is just incase 
